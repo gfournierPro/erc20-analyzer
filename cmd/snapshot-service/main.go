@@ -34,6 +34,8 @@ func main() {
 			log.Fatal().Err(err).Str("chain", ch.Name).Msg("client init failed")
 		}
 		reg.Add(cli)
+		log.Info().Str("chain", ch.Name).Int64("chain_id", ch.ChainID).Msg("chain client ready")
+
 	}
 	defer reg.CloseAll()
 
