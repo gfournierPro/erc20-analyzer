@@ -35,7 +35,7 @@ type ChainConfig struct {
 	RPCURL      string `mapstructure:"rpc_url"`
 	IsArchive   bool   `mapstructure:"is_archive"`
 	MaxLogRange uint64 `mapstructure:"max_log_range"`
-	RPSLimint   int    `mapstructure:"rps_limit"`
+	RPSLimit    int    `mapstructure:"rps_limit"`
 }
 
 type ServiceConfig struct {
