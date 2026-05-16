@@ -10,7 +10,7 @@ type Config struct {
 	Env      string         `mapstructure:"env"`
 	Postgres PostgresConfig `mapstructure:"postgres"`
 	Redis    RedisConfig    `mapstructure:"redis"`
-	NATS     NATSConfig     `mapstructure:"nats"`
+	Kafka    KafkaConfig    `mapstructure:"kafka"`
 	Chains   []ChainConfig  `mapstructure:"chains"`
 	Service  ServiceConfig  `mapstructure:"service"`
 }
@@ -25,8 +25,16 @@ type RedisConfig struct {
 	DB       int    `mapstructure:"db"`
 }
 
-type NATSConfig struct {
-	URL string `mapstructure:"url"`
+type KafkaConfig struct {
+	Brokers []string    `mapstructure:"brokers"`
+	Topics  KafkaTopics `mapstructure:"topics"`
+}
+
+type KafkaTopics struct {
+	SnapshotJobs     string `mapstructure:"snapshot_jobs"`
+	SnapshotResults  string `mapstructure:"snapshot_results"`
+	ClassifyRequests string `mapstructure:"classify_requests"`
+	ClassifyResults  string `mapstructure:"classify_results"`
 }
 
 type ChainConfig struct {
