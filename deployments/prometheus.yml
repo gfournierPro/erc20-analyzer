@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'snapshot-service'
+    static_configs:
+      - targets: ['host.docker.internal:9101']
+  - job_name: 'classification-service'
+    static_configs:
+      - targets: ['host.docker.internal:9101']
+  - job_name: 'analytics-service'
+    static_configs:
+      - targets: ['host.docker.internal:9103']
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['host.docker.internal:9100']
