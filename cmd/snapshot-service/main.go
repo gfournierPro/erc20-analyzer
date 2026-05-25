@@ -11,6 +11,7 @@ import (
 	"github.com/gfournierPro/erc20-analyzer/internal/chain"
 	"github.com/gfournierPro/erc20-analyzer/internal/config"
 	"github.com/gfournierPro/erc20-analyzer/internal/logging"
+	"github.com/gfournierPro/erc20-analyzer/internal/messaging"
 )
 
 func main() {
@@ -22,6 +23,15 @@ func main() {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
+
+	bootstrapCtx, bsCancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer bsCancel()
+	if err := messaging.EnsureTopics(bootstrapCtx, cfg.Kafka.Brokers, []messaging.TopicSpec{
+		{Name: cfg.Kafka.Topics.SnapshotJobs, Partitions: 6, ReplicationFactr: 1},
+		{Name: cfg.Kafka.Topics.SnapshotResults, Partitions: 6, ReplicationFactr: 1},
+	}); err != nil {
+		log.Warn().Err(err).Msg("ensure topics (may already exist)")
+	}
 
 	reg := chain.NewRegistry()
 
@@ -39,6 +49,9 @@ func main() {
 	}
 	defer reg.CloseAll()
 
+	pub := messaging.NewPublisher(cfg.Kafka.Brokers, cfg.Kafka.Topics.SnapshotJobs)
+	defer pub.Close()
+
 	if cli, ok := reg.Get("ethereum"); ok {
 		usdc := common.HexToAddress("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
 		md, err := cli.GetTokenMetadata(ctx, usdc)
@@ -51,6 +64,17 @@ func main() {
 				Uint8("decimals", md.Decimals).
 				Str("totalSupply", md.TotalSupply.String()).
 				Msg("token metadata OK")
+
+			job := map[string]any{
+				"chain": "ethereum",
+				"token": usdc.Hex(),
+				"name":  md.Name,
+			}
+			if err := pub.PublishJSON(ctx, usdc.Hex(), job); err != nil {
+				log.Error().Err(err).Msg("publish failed")
+			} else {
+				log.Info().Msg("test job published to Kafka")
+			}
 		}
 	}
 	<-ctx.Done()

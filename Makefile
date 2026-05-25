@@ -17,3 +17,11 @@ fmt:
 
 lint:
 	go vet ./...
+
+kafka-topics:
+	docker exec -it erc20_kafka kafka-topics --bootstrap-server localhost:9092 --list
+
+kafka-consume:
+	docker exec -it erc20_kafka kafka-console-consumer \
+		--bootstrap-server localhost:9092 \
+		--topic $(TOPIC) --from-beginning
