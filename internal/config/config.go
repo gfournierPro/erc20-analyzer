@@ -33,6 +33,7 @@ type KafkaConfig struct {
 type KafkaTopics struct {
 	SnapshotJobs     string `mapstructure:"snapshot_jobs"`
 	SnapshotResults  string `mapstructure:"snapshot_results"`
+	SnapshotStatus   string `mapstructure:"snapshot_status"`
 	ClassifyRequests string `mapstructure:"classify_requests"`
 	ClassifyResults  string `mapstructure:"classify_results"`
 }

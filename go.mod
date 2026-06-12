@@ -2,7 +2,10 @@ module github.com/gfournierPro/erc20-analyzer
 
 go 1.25.4
 
-require github.com/spf13/viper v1.21.0
+require (
+	github.com/spf13/viper v1.21.0
+	golang.org/x/sync v0.19.0
+)
 
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
@@ -32,7 +35,6 @@ require (
 	go.opentelemetry.io/otel v1.40.0 // indirect
 	go.opentelemetry.io/otel/metric v1.40.0 // indirect
 	go.opentelemetry.io/otel/trace v1.40.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
 )
 
 require (

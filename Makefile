@@ -25,3 +25,17 @@ kafka-consume:
 	docker exec -it erc20_kafka kafka-console-consumer \
 		--bootstrap-server localhost:9092 \
 		--topic $(TOPIC) --from-beginning
+
+
+publish-test-job:
+	go run scripts/publish_test_job.go
+
+watch-results:
+	docker exec -it erc20_kafka kafka-console-consumer \
+		--bootstrap-server localhost:9092 \
+		--topic snapshot.results --from-beginning
+
+watch-status:
+	docker exec -it erc20_kafka kafka-console-consumer \
+		--bootstrap-server localhost:9092 \
+		--topic snapshot.status --from-beginning
