@@ -122,6 +122,7 @@ func (s *Scanner) Run(ctx context.Context, cli *chain.Client, job SnapshotJob) e
 				Token:        job.Token,
 				ChunkFrom:    ch.From,
 				ChunkTo:      ch.To,
+				ChunksTotal:  uint64(totalChunks),
 				Transfers:    toWireTransfers(transfers),
 				IsFinalChunk: i == totalChunks-1,
 			}

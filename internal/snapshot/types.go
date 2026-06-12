@@ -34,6 +34,7 @@ type TransferBatch struct {
 	Token        string     `json:"token"`
 	ChunkFrom    uint64     `json:"chunk_from"`
 	ChunkTo      uint64     `json:"chunk_to"`
+	ChunksTotal  uint64     `json:"chunks_total"`
 	Transfers    []Transfer `json:"transfers"`
 	IsFinalChunk bool       `json:"is_final_chunk"`
 }
