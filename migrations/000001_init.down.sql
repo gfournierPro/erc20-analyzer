@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS balances;
+DROP TABLE IF EXISTS token_coverage;
+DROP TABLE IF EXISTS transfers;
+DROP TABLE IF EXISTS snapshot_chunks;
+DROP TABLE IF EXISTS snapshots;
+DROP TABLE IF EXISTS tokens;

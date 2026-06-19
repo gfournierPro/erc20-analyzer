@@ -23,5 +23,5 @@ func (k *KafkaEmitter) EmitBatch(ctx context.Context, b TransferBatch) error {
 }
 
 func (k *KafkaEmitter) EmitStatus(ctx context.Context, s SnapshotStatus) error {
-	return k.results.PublishJSON(ctx, s.Token, s)
+	return k.status.PublishJSON(ctx, s.Token, s)
 }

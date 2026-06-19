@@ -168,11 +168,13 @@ func (s *Scanner) Run(ctx context.Context, cli *chain.Client, job SnapshotJob) e
 		return err
 	}
 
-	_ = s.emitter.EmitStatus(ctx, SnapshotStatus{
+	if err := s.emitter.EmitStatus(ctx, SnapshotStatus{
 		JobID: job.JobID, Token: job.Token, Chain: job.Chain,
 		State: "done", BlocksDone: totalBlocks, BlocksTotal: totalBlocks,
 		UpdatedAt: time.Now(),
-	})
+	}); err != nil {
+		log.Error().Err(err).Str("job", job.JobID).Msg("failed to emit done status")
+	}
 	log.Info().Str("job", job.JobID).Msg("snapshot done")
 
 	return nil
