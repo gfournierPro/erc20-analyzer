@@ -20,7 +20,7 @@ func main() {
 		JobID:       uuid.NewString(),
 		Chain:       "ethereum",
 		Token:       "0x4647e1fE715c9e23959022C2416C71867F5a6E80",
-		FromBlock:   24867265,
+		FromBlock:   0,
 		ToBlock:     0,
 		RequestedAt: time.Now(),
 	}

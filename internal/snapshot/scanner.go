@@ -68,6 +68,16 @@ func (s *Scanner) Run(ctx context.Context, cli *chain.Client, job SnapshotJob) e
 	}
 
 	fromBlock := job.FromBlock
+	if fromBlock == 0 {
+		deploy, err := cli.FindDeployBlock(ctx, token)
+		if err != nil {
+			log.Warn().Err(err).Str("token", job.Token).Msg("deploy-block detection failed; scanning from block 0")
+			fromBlock = 0
+		} else {
+			fromBlock = deploy
+			log.Info().Str("token", job.Token).Uint64("deploy_block", deploy).Msg("deploy block detected")
+		}
+	}
 	if fromBlock > toBlock {
 		return fmt.Errorf("from_block (%d) > to_block (%d)", fromBlock, toBlock)
 	}
