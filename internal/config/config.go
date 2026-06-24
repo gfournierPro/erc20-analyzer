@@ -20,7 +20,7 @@ type PostgresConfig struct {
 }
 
 type RedisConfig struct {
-	Addr     string `mapstructure:"addr"`
+	Address  string `mapstructure:"address"`
 	Password string `mapstructure:"password"`
 	DB       int    `mapstructure:"db"`
 }

@@ -1,4 +1,4 @@
-.PHONY: up down tidy run-snapshot fmt lint migrate-up migrate-down run-aggregator psql snapshot-balances migrate-force kafka-topics-create
+.PHONY: up down tidy run-snapshot fmt lint migrate-up migrate-down run-aggregator psql snapshot-balances migrate-force kafka-topics-create run-classification
 
 up:
 	docker compose -f deployments/docker-compose.yml up -d
@@ -65,3 +65,9 @@ kafka-topics-create:
 	docker exec -i erc20_kafka kafka-topics --bootstrap-server localhost:9092 --create --if-not-exists --topic snapshot.jobs --partitions 6 --replication-factor 1
 	docker exec -i erc20_kafka kafka-topics --bootstrap-server localhost:9092 --create --if-not-exists --topic snapshot.results --partitions 6 --replication-factor 1
 	docker exec -i erc20_kafka kafka-topics --bootstrap-server localhost:9092 --create --if-not-exists --topic snapshot.status --partitions 3 --replication-factor 1
+	docker exec -i erc20_kafka kafka-topics --bootstrap-server localhost:9092 --create --if-not-exists --topic classify.requests --partitions 6 --replication-factor 1
+	docker exec -i erc20_kafka kafka-topics --bootstrap-server localhost:9092 --create --if-not-exists --topic classify.results --partitions 6 --replication-factor 1
+
+
+run-classification:
+	go run ./cmd/classification-service

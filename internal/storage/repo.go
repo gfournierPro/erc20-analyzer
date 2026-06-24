@@ -85,10 +85,10 @@ func (r *Repo) MarkDone(ctx context.Context, snapshotID string) error {
 	return err
 }
 
-func (r *Repo) TryComplete(ctx context.Context, snapshotID string) (bool, error) {
+func (r *Repo) TryComplete(ctx context.Context, snapshotID string) (bool, string, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 	defer tx.Rollback(ctx)
 
@@ -114,9 +114,9 @@ func (r *Repo) TryComplete(ctx context.Context, snapshotID string) (bool, error)
 	`, snapshotID).Scan(&fromBlock, &toBlock, &chain, &token)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return false, nil
+			return false, "", nil
 		}
-		return false, fmt.Errorf("completion gate: %w", err)
+		return false, "", fmt.Errorf("completion gate: %w", err)
 	}
 
 	_, err = tx.Exec(ctx, `
@@ -134,7 +134,7 @@ func (r *Repo) TryComplete(ctx context.Context, snapshotID string) (bool, error)
 		HAVING SUM(delta) <> 0
 	`, snapshotID, chain, token, toBlock, zeroAddr)
 	if err != nil {
-		return false, fmt.Errorf("recompute balances: %w", err)
+		return false, "", fmt.Errorf("recompute balances: %w", err)
 	}
 
 	_, err = tx.Exec(ctx, `
@@ -147,11 +147,41 @@ func (r *Repo) TryComplete(ctx context.Context, snapshotID string) (bool, error)
 		AND EXCLUDED.covered_from <= token_coverage.covered_to +1 	
 	`, chain, token, fromBlock, toBlock)
 	if err != nil {
-		return false, fmt.Errorf("advance coverage: %w", err)
+		return false, "", fmt.Errorf("advance coverage: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return false, err
+		return false, "", err
 	}
-	return true, nil
+	return true, chain, nil
+}
+
+func (r *Repo) HolderAddresses(ctx context.Context, snapshotID string) ([]string, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT address FROM balances WHERE snapshot_id = $1`, snapshotID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var addrs []string
+	for rows.Next() {
+		var a string
+		if err := rows.Scan(&a); err != nil {
+			return nil, err
+		}
+		addrs = append(addrs, a)
+	}
+
+	return addrs, rows.Err()
+}
+
+func (r *Repo) UpsertClassification(ctx context.Context, chain, address, addrType string) error {
+	_, err := r.pool.Exec(ctx, `
+		INSERT INTO address_classification (chain, address, address_type)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (chain, address) DO UPDATE
+		SET address_type = EXCLUDED.address_type, classified_at = now()
+	`, chain, address, addrType)
+	return err
 }

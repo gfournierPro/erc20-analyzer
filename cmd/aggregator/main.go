@@ -32,13 +32,21 @@ func main() {
 		log.Fatal().Err(err).Msg("postgres connect failed")
 	}
 	defer pool.Close()
+
 	repo := storage.NewRepo(pool)
-	agg := aggregator.New(repo)
+
+	classifyReqPub := messaging.NewPublisher(cfg.Kafka.Brokers, cfg.Kafka.Topics.ClassifyRequests)
+	defer classifyReqPub.Close()
+
+	agg := aggregator.New(repo, classifyReqPub)
 
 	resutlsConsumer := messaging.NewConsumer(cfg.Kafka.Brokers, cfg.Kafka.Topics.SnapshotResults, "aggregator")
 	statusConsumer := messaging.NewConsumer(cfg.Kafka.Brokers, cfg.Kafka.Topics.SnapshotStatus, "aggregator")
 	defer resutlsConsumer.Close()
 	defer statusConsumer.Close()
+
+	classifyResultConsumer := messaging.NewConsumer(cfg.Kafka.Brokers, cfg.Kafka.Topics.ClassifyResults, "aggregator-classify")
+	defer classifyResultConsumer.Close()
 
 	g, gctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
@@ -48,6 +56,11 @@ func main() {
 	g.Go(func() error {
 		log.Info().Str("topic", cfg.Kafka.Topics.SnapshotStatus).Msg("consuming status")
 		return statusConsumer.Run(gctx, agg.HandleStatus)
+	})
+
+	g.Go(func() error {
+		log.Info().Str("topic", cfg.Kafka.Topics.ClassifyResults).Msg("consuming classify results")
+		return classifyResultConsumer.Run(gctx, agg.HandleClassifyResult)
 	})
 
 	log.Info().Msg("aggregator ready")

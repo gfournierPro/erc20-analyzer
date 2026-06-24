@@ -3,7 +3,9 @@ package aggregator
 import (
 	"context"
 	"encoding/json"
+	"time"
 
+	"github.com/gfournierPro/erc20-analyzer/internal/classify"
 	"github.com/gfournierPro/erc20-analyzer/internal/messaging"
 	"github.com/gfournierPro/erc20-analyzer/internal/snapshot"
 	"github.com/gfournierPro/erc20-analyzer/internal/storage"
@@ -11,12 +13,14 @@ import (
 )
 
 type Aggregator struct {
-	repo *storage.Repo
+	repo        *storage.Repo
+	classifyReq *messaging.Publisher
 }
 
-func New(repo *storage.Repo) *Aggregator {
+func New(repo *storage.Repo, classifyReq *messaging.Publisher) *Aggregator {
 	return &Aggregator{
-		repo: repo,
+		repo:        repo,
+		classifyReq: classifyReq,
 	}
 }
 
@@ -62,13 +66,39 @@ func (a *Aggregator) HandleStatus(ctx context.Context, msg messaging.Message) er
 	}
 }
 
+func (a *Aggregator) HandleClassifyResult(ctx context.Context, msg messaging.Message) error {
+	var res classify.Result
+	if err := json.Unmarshal(msg.Value, &res); err != nil {
+		log.Error().Err(err).Msg("invalid classify Result; dropping")
+		return nil
+	}
+	if err := a.repo.UpsertClassification(ctx, res.Chain, res.Address, res.AddressType); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (a *Aggregator) tryComplete(ctx context.Context, snapshotID string) error {
-	done, err := a.repo.TryComplete(ctx, snapshotID)
+	done, chainName, err := a.repo.TryComplete(ctx, snapshotID)
 	if err != nil {
 		return err
 	}
 	if done {
 		log.Info().Str("snapshot", snapshotID).Msg("snapshot complete: balances recomputed, coverage advanced")
 	}
+
+	addrs, err := a.repo.HolderAddresses(ctx, snapshotID)
+	if err != nil {
+		log.Warn().Err(err).Msg("fetch holders for classification failed")
+		return nil
+	}
+
+	for _, addr := range addrs {
+		req := classify.Request{Chain: chainName, Address: addr, CreatedAt: time.Now()}
+		if err := a.classifyReq.PublishJSON(ctx, addr, req); err != nil {
+			log.Warn().Err(err).Str("address", addr).Msg("publish classify request failed")
+		}
+	}
+	log.Info().Int("count", len(addrs)).Msg("classification requests published")
 	return nil
 }

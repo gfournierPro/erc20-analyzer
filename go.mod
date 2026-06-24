@@ -39,6 +39,7 @@ require (
 	go.opentelemetry.io/otel v1.40.0 // indirect
 	go.opentelemetry.io/otel/metric v1.40.0 // indirect
 	go.opentelemetry.io/otel/trace v1.40.0 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
 )
 
 require (
@@ -47,6 +48,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
+	github.com/redis/go-redis/v9 v9.20.1
 	github.com/rs/zerolog v1.35.1
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/segmentio/kafka-go v0.4.51
