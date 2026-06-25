@@ -46,14 +46,10 @@ func (c *Classifier) Classify(ctx context.Context, chainName, addr string) (stri
 	if err != nil {
 		return "", fmt.Errorf("latest block: %w", err)
 	}
-	hasCode, err := cli.HasCodeAt(ctx, common.HexToAddress(addr), head)
-	if err != nil {
-		return "", fmt.Errorf("getCode: %w", err)
-	}
 
-	addrType := TypeEOA
-	if hasCode {
-		addrType = TypeContract
+	addrType, err := cli.AddressKind(ctx, common.HexToAddress(addr), head)
+	if err != nil {
+		return "", fmt.Errorf("classify: %w", err)
 	}
 
 	if err := c.rdb.Set(ctx, key, addrType, cacheTTL).Err(); err != nil {

@@ -16,6 +16,7 @@ type Result struct {
 }
 
 const (
-	TypeEOA      = "eoa"
-	TypeContract = "contract"
+	TypeEOA       = "eoa"
+	TypeContract  = "contract"
+	TypeDelegates = "delegated"
 )
