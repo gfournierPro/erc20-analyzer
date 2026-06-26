@@ -3,7 +3,9 @@ package storage
 import (
 	"context"
 	"fmt"
+	"math/big"
 
+	"github.com/gfournierPro/erc20-analyzer/internal/analytics"
 	"github.com/gfournierPro/erc20-analyzer/internal/snapshot"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -184,4 +186,39 @@ func (r *Repo) UpsertClassification(ctx context.Context, chain, address, addrTyp
 		SET address_type = EXCLUDED.address_type, classified_at = now()
 	`, chain, address, addrType)
 	return err
+}
+
+func (r *Repo) SnapshotHolders(ctx context.Context, snapshotID string) ([]analytics.Holder, error) {
+	rows, err := r.pool.Query(ctx, `
+		SELECT b.balance::text, COALESCE(c.address_type, '')
+		FROM balances b
+		LEFT JOIN address_classification c
+			ON c.address = b.address
+		WHERE b.snapshot_id = $1 AND b.balance > 0
+	`, snapshotID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []analytics.Holder
+	for rows.Next() {
+		var balStr, atype string
+		if err := rows.Scan(&balStr, &atype); err != nil {
+			return nil, err
+		}
+		bal, ok := new(big.Int).SetString(balStr, 10)
+		if !ok {
+			continue
+		}
+		out = append(out, analytics.Holder{Balance: bal, AddressType: atype})
+	}
+	return out, rows.Err()
+}
+
+func (r *Repo) SnapshotMeta(ctx context.Context, snapshotID string) (chain, token string, block int64, err error) {
+	err = r.pool.QueryRow(ctx,
+		`SELECT chain, token, block_number FROM snapshots WHERE id = $1 AND state = 'ready'`,
+		snapshotID).Scan(&chain, &token, &block)
+	return
 }

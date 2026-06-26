@@ -1,4 +1,4 @@
-.PHONY: up down tidy run-snapshot fmt lint migrate-up migrate-down run-aggregator psql snapshot-balances migrate-force kafka-topics-create run-classification
+.PHONY: up down tidy run-snapshot fmt lint migrate-up migrate-down run-aggregator psql snapshot-balances migrate-force kafka-topics-create run-classification proto run-analytics analytics
 
 up:
 	docker compose -f deployments/docker-compose.yml up -d
@@ -71,3 +71,15 @@ kafka-topics-create:
 
 run-classification:
 	go run ./cmd/classification-service
+
+proto:
+	protoc \
+		--go_out=. --go_opt=module=github.com/gfournierPro/erc20-analyzer \
+		--go-grpc_out=. --go-grpc_opt=module=github.com/gfournierPro/erc20-analyzer \
+		api/proto/analytics.proto
+
+run-analytics:
+	go run ./cmd/analytics-service
+
+analytics:
+	go run ./cmd/analytics-client $(ID)

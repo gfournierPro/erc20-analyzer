@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package analytics.v1;
+
+option go_package = "github.com/gfournierPro/erc20-analyzer/internal/analytics/pb;pb";
+
+service AnalyticsService {
+    rpc GetDistribution(GetDistributionRequest) returns (GetDistributionResponse);
+}
+
+message GetDistributionRequest {
+    string snapshot_id = 1;
+}
+
+message GetDistributionResponse {
+    string snapshot_id = 1;
+    string chain = 2;
+    string token = 3;
+    int64 block_number = 4;
+
+    Metrics raw = 5;
+    Metrics filtered = 6;
+}
+
+message Metrics {
+    int64 holder_count = 1;
+    double gini = 2;
+    int64 nakamoto = 3;
+    double hhi = 4;
+    repeated Bucket buckets = 5;
+}
+
+message Bucket {
+    string label = 1;
+    string min_share = 2;
+    int64 holder_count = 3;
+    string total_balance = 4;
+}

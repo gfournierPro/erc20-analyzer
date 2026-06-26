@@ -12,7 +12,7 @@ type Config struct {
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Kafka    KafkaConfig    `mapstructure:"kafka"`
 	Chains   []ChainConfig  `mapstructure:"chains"`
-	Service  ServiceConfig  `mapstructure:"service"`
+	Services ServiceConfig  `mapstructure:"services"`
 }
 
 type PostgresConfig struct {
