@@ -222,3 +222,28 @@ func (r *Repo) SnapshotMeta(ctx context.Context, snapshotID string) (chain, toke
 		snapshotID).Scan(&chain, &token, &block)
 	return
 }
+
+type SnapshotStatusView struct {
+	SnapshotID  string `json:"snapshot_id"`
+	Chain       string `json:"chain"`
+	Token       string `json:"token"`
+	State       string `json:"state"`
+	BlockNumber *int64 `json:"block_number,omitempty"`
+	ChunksTotal int64  `json:"chunks_total"`
+	ChunksDone  int64  `json:"chunks_done"`
+}
+
+func (r *Repo) SnapshotStatus(ctx context.Context, snapshotID string) (*SnapshotStatusView, error) {
+	var v SnapshotStatusView
+	err := r.pool.QueryRow(ctx, `
+		SELECT s.id, s.chain, s.token, s.state, s.block_number, s.chunks_total,
+		       (SELECT count(*) FROM snapshot_chunks WHERE snapshot_id = s.id)
+		FROM snapshots s
+		WHERE s.id = $1
+	`, snapshotID).Scan(&v.SnapshotID, &v.Chain, &v.Token, &v.State,
+		&v.BlockNumber, &v.ChunksTotal, &v.ChunksDone)
+	if err != nil {
+		return nil, err
+	}
+	return &v, nil
+}

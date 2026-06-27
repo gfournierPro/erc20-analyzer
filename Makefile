@@ -1,4 +1,4 @@
-.PHONY: up down tidy run-snapshot fmt lint migrate-up migrate-down run-aggregator psql snapshot-balances migrate-force kafka-topics-create run-classification proto run-analytics analytics
+.PHONY: up down tidy run-snapshot fmt lint migrate-up migrate-down run-aggregator psql snapshot-balances migrate-force kafka-topics-create run-classification proto run-analytics analytics run-gateway
 
 up:
 	docker compose -f deployments/docker-compose.yml up -d
@@ -83,3 +83,6 @@ run-analytics:
 
 analytics:
 	go run ./cmd/analytics-client $(ID)
+
+run-gateway:
+	go run ./cmd/api-gateway
