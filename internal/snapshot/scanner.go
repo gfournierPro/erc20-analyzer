@@ -126,19 +126,42 @@ func (s *Scanner) Run(ctx context.Context, cli *chain.Client, job SnapshotJob) e
 				return fmt.Errorf("chunk [%d..%d]", ch.From, ch.To, err)
 			}
 
-			batch := TransferBatch{
-				JobID:        job.JobID,
-				Chain:        job.Chain,
-				Token:        job.Token,
-				ChunkFrom:    ch.From,
-				ChunkTo:      ch.To,
-				ChunksTotal:  uint64(totalChunks),
-				Transfers:    toWireTransfers(transfers),
-				IsFinalChunk: i == totalChunks-1,
-			}
+			const maxTransferPerBatch = 500
 
-			if err := s.emitter.EmitBatch(gctx, batch); err != nil {
-				return fmt.Errorf("emit batch: %w", err)
+			wire := toWireTransfers(transfers)
+
+			if len(wire) == 0 {
+				if err := s.emitter.EmitBatch(gctx, TransferBatch{
+					JobID:        job.JobID,
+					Chain:        job.Chain,
+					Token:        job.Token,
+					ChunkFrom:    ch.From,
+					ChunkTo:      ch.To,
+					ChunksTotal:  uint64(totalChunks),
+					Transfers:    nil,
+					IsFinalChunk: i == totalChunks-1,
+				}); err != nil {
+					return fmt.Errorf("emit batch: %w", err)
+				}
+			} else {
+				for start := 0; start < len(wire); start += maxTransferPerBatch {
+					end := start + maxTransferPerBatch
+					if end > len(wire) {
+						end = len(wire)
+					}
+					if err := s.emitter.EmitBatch(gctx, TransferBatch{
+						JobID:        job.JobID,
+						Chain:        job.Chain,
+						Token:        job.Token,
+						ChunkFrom:    ch.From,
+						ChunkTo:      ch.To,
+						ChunksTotal:  uint64(totalChunks),
+						Transfers:    wire[start:end],
+						IsFinalChunk: i == totalChunks-1,
+					}); err != nil {
+						return fmt.Errorf("emit batch: %w", err)
+					}
+				}
 			}
 
 			mu.Lock()
@@ -245,7 +268,7 @@ func (s *Scanner) fetchChunkAdaptive(
 		if err != nil {
 			if errors.Is(err, chain.ErrLogRangeTooLarge) {
 				span := r.To - r.From + 1
-				if span <= s.cfg.MaxChunkSize {
+				if span <= s.cfg.MinChunkSize {
 					return nil, fmt.Errorf("range too large even at min size [%d..%d]: %w", r.From, r.To, err)
 				}
 				mid := r.From + span/2
